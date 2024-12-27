@@ -1,0 +1,109 @@
+SELECT *
+FROM layoffs_copy2;
+
+SELECT max(total_laid_off), max(percentage_laid_off)
+FROM layoffs_copy2;
+
+SELECT *
+FROM layoffs_copy2
+WHERE percentage_laid_off = 1
+ORDER BY funds_raised_millions DESC;
+
+SELECT company, SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY company
+ORDER BY 2 DESC;
+
+SELECT MIN(`date`), MAX(`date`)
+FROM layoffs_copy2;
+
+SELECT industry, SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY industry
+ORDER BY 2 DESC;
+
+SELECT country, SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY country
+ORDER BY 1 DESC;
+
+SELECT YEAR(`date`), SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY YEAR (`date`)
+ORDER BY 1 DESC;
+
+SELECT stage, SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY stage
+ORDER BY 2 DESC;
+
+SELECT company, SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY company
+ORDER BY 1 DESC;
+
+SELECT substring(`date`,1,7) as `MONTH`, SUM(total_laid_off)
+FROM layoffs_copy2
+where substring(`date`,1,7)  is not null
+GROUP BY  MONTH
+ORDER BY 1 ASC;
+
+WITH rolling_total as
+(SELECT substring(`date`,1,7) as `MONTH`, SUM(total_laid_off) as total_off
+FROM layoffs_copy2
+where substring(`date`,1,7)  is not null
+GROUP BY  MONTH
+ORDER BY 1 ASC
+)
+SELECT `MONTH`, total_off,
+sum(total_off) OVER(ORDER BY `MONTH`) as rolling_total2
+FROM rolling_total;
+
+SELECT company, SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY company
+ORDER BY 1 DESC;
+
+SELECT company,YEAR(`date`),SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY company, YEAR(`date`)
+ORDER BY 3 DESC;
+
+WITH Company_Year (company, dates, total_laid_off)as(
+SELECT company, YEAR(`date`),SUM(total_laid_off)
+FROM layoffs_copy2
+GROUP BY company, YEAR(`date`)
+), Company_Year_Rank AS
+(SELECT*, 
+DENSE_RANK() OVER(partition by dates order by total_laid_off DESC) AS ranking
+FROM Company_year
+WHERE dates is not null)
+
+select *
+FROM Company_Year_Rank
+WHERE ranking <= 5;
+
+SELECT industry, SUM(total_laid_off), AVG(percentage_laid_off)
+FROM layoffs_copy2
+GROUP BY industry
+ORDER BY 2 DESC;
+
+WITH industry_view (industry, layoffs, avg_percentage) as
+(
+SELECT industry, SUM(total_laid_off), truncate(avg(percentage_laid_off), 2)
+FROM layoffs_copy2
+GROUP BY industry
+)
+SELECT *
+FROM industry_view
+where layoffs is not null;
+
+WITH company_view (company, layoffs, avg_percentage) as
+(
+SELECT company, SUM(total_laid_off), truncate(avg(percentage_laid_off), 2)
+FROM layoffs_copy2
+GROUP BY company
+)
+SELECT *
+FROM company_view
+where layoffs is not null;
